@@ -39,7 +39,6 @@ export default async function decorate(block) {
           src="${blockCollectionBaseUrl}${blockName}"
           title="${blockName}"
           class="block-example"
-          style="border: 0; top: 0; left: 0; width: 100%; height: 100vh;" 
           allowfullscreen=""
           allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           loading="lazy">
@@ -65,21 +64,25 @@ export default async function decorate(block) {
       const dp = new DOMParser();
       const doc = dp.parseFromString(html, 'text/html');
       const blockExamples = doc.querySelectorAll(`.${blockName}`);
-      blockExamples.forEach((example) => {
+      const example = (blockExamples && blockExamples.length > 0) ? blockExamples[0] : null;
+      if (example) {
         const table = document.createElement('table');
         table.innerHTML = `
-          <thead>
-            <tr>
-              <th>${example.className.split(' ').map((cls) => `${cls.charAt(0).toUpperCase()}${cls.substring(1)}`).join(' ')}</th>
-            </tr>
-          </thead>
-          <tbody>
-          </tbody>
-        `;
+            <thead>
+              <tr>
+                <th>${example.className.split(' ').map((cls) => `${cls.charAt(0).toUpperCase()}${cls.substring(1)}`).join(' ')}</th>
+              </tr>
+            </thead>
+            <tbody>
+            </tbody>
+          `;
         const rows = example.querySelectorAll(':scope > div');
+        let maxcols = 0;
         rows.forEach((row) => {
           const tr = document.createElement('tr');
           const cols = row.querySelectorAll(':scope > div');
+          const numCols = cols.length;
+          if (numCols > maxcols) maxcols = numCols;
           cols.forEach((col) => {
             const td = document.createElement('td');
             td.append(transformBlockContent(col));
@@ -87,8 +90,18 @@ export default async function decorate(block) {
           });
           table.querySelector('tbody').appendChild(tr);
         });
-        blockExampleContainer.appendChild(table);
-      });
+        table.querySelector('thead > tr > th').setAttribute('colspan', maxcols);
+        table.querySelectorAll('tbody > tr').forEach((tr) => {
+          const tds = tr.querySelectorAll(':scope > td');
+          if (tds.length < maxcols) {
+            tds[0].setAttribute('colspan', maxcols - tds.length + 1);
+          }
+        });
+        const docWrapper = document.createElement('div');
+        docWrapper.classList.add('document-wrapper');
+        docWrapper.appendChild(table);
+        blockExampleContainer.appendChild(docWrapper);
+      }
     } else {
       throw new Error('failed to fetch block content');
     }
@@ -99,7 +112,7 @@ export default async function decorate(block) {
       if (json && json.edit && json.edit.status === 200 && json.edit.url) {
         const editUrl = json.edit.url;
         blockExampleContainer.innerHTML += `
-          <a href="${editUrl}" title="See Content Structure" class="button primary" target="_blank">See Content Structure</a>
+          <a href="${editUrl}" title="See Document" class="button primary" target="_blank">See Document</a>
         `;
       }
     }

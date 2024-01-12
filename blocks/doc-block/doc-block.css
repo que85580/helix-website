@@ -1,1 +1,51 @@
 /* no css yet */
+.doc-block iframe {
+  border: 0;
+  width: 100%; 
+  height: calc(100dvh - var(--nav-height));
+}
+
+.doc-block .block-content-stucture .document-wrapper {
+  padding: 1rem;
+  background-color: var(--bg-color-grey);
+  font-family: system-ui, sans-serif;
+}
+
+.doc-block .block-content-stucture .document-wrapper table {
+  background-color: white;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.doc-block .block-content-stucture .document-wrapper > table th {
+  background-color: var(--brand-color-purple);
+}
+
+.doc-block .block-content-stucture .document-wrapper > table td,
+.doc-block .block-content-stucture .document-wrapper > table th {
+  padding: .25rem;
+  border: 1px solid var(--color-gray-100);
+}
+
+.doc-block .block-content-stucture .document-wrapper > table td :is(p, h1, h2, h3, h4, h5, h6) {
+  margin: 0;
+  padding: 0;
+  margin-bottom: 1em;
+  border-bottom: 0;
+}
+
+.doc-block .block-content-stucture .document-wrapper > table td a {
+  color: var(--color-accent-blue);
+}
+
+.doc-block .block-content-stucture .document-wrapper > table td [data-align="center"] {
+  text-align: center;
+}
+
+.doc-block .block-content-stucture .document-wrapper > table td [data-align="right"] {
+  text-align: right;
+}
+
+.doc-block .block-content-stucture .document-wrapper > table td [data-align="justify"] {
+  text-align: justify;
+}
