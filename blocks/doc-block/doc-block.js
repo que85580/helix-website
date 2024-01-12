@@ -1,5 +1,11 @@
-const blockCollectionBaseUrl = 'https://main--helix-block-collection--adobe.hlx.live/block-collection/';
-const blockCollectionGitUrl = 'https://github.com/adobe/helix-block-collection';
+const blockCollectionInfo = {
+  owner: 'adobe',
+  repo: 'helix-block-collection',
+  ref: 'main',
+};
+const blockCollectionBaseUrl = `https://${blockCollectionInfo.ref}--${blockCollectionInfo.repo}--${blockCollectionInfo.owner}.hlx.live/block-collection/`;
+const blockCollectionGitUrl = `https://github.com/${blockCollectionInfo.owner}/${blockCollectionInfo.repo}`;
+const adminApiUrl = `https://admin.hlx.page/status/${blockCollectionInfo.owner}/${blockCollectionInfo.repo}/${blockCollectionInfo.ref}/block-collection/`;
 
 const transformBlockContent = (element) => {
   const clone = element.cloneNode(true);
@@ -48,7 +54,7 @@ export default async function decorate(block) {
         <h2>Code</h2>
         <p>This code is included in Block Collection, simply copying the <code>.css</code> file and the <code>.js</code> file will add this block to your project.</p>
         <p class="button-container">
-          <a href="${blockCollectionGitUrl}/tree/main/blocks/video" title="Block Code" class="button primary" target="_blank">Block Code</a>
+          <a href="${blockCollectionGitUrl}/tree/main/blocks/${blockName}" title="Block Code" class="button primary" target="_blank">Block Code</a>
         </p>
       `;
   const blockExampleContainer = block.querySelector('.block-content-stucture');
@@ -85,6 +91,17 @@ export default async function decorate(block) {
       });
     } else {
       throw new Error('failed to fetch block content');
+    }
+
+    const adminApiResp = await fetch(`${adminApiUrl}${blockName}?editUrl=auto`);
+    if (adminApiResp.ok) {
+      const json = await adminApiResp.json();
+      if (json && json.edit && json.edit.status === 200 && json.edit.url) {
+        const editUrl = json.edit.url;
+        blockExampleContainer.innerHTML += `
+          <a href="${editUrl}" title="See Content Structure" class="button primary" target="_blank">See Content Structure</a>
+        `;
+      }
     }
   } catch (e) {
     blockExampleContainer.innerHTML = '<p>Failed to load block content</p>';
