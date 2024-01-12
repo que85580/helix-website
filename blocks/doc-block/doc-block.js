@@ -27,11 +27,7 @@ const transformBlockContent = (element) => {
 
 export default async function decorate(block) {
   const blockName = window.location.pathname.split('/').pop();
-  try {
-    const response = await fetch(`${blockCollectionBaseUrl}${blockName}.plain.html`);
-    if (response.ok) {
-      const html = await response.text();
-      block.innerHTML = `
+  block.innerHTML = `
         <h2>Example</h2>  
         <iframe 
           src="${blockCollectionBaseUrl}${blockName}"
@@ -55,10 +51,14 @@ export default async function decorate(block) {
           <a href="${blockCollectionGitUrl}/tree/main/blocks/video" title="Block Code" class="button primary" target="_blank">Block Code</a>
         </p>
       `;
+  const blockExampleContainer = block.querySelector('.block-content-stucture');
+  try {
+    const response = await fetch(`${blockCollectionBaseUrl}${blockName}.plain.html`);
+    if (response.ok) {
+      const html = await response.text();
       const dp = new DOMParser();
       const doc = dp.parseFromString(html, 'text/html');
       const blockExamples = doc.querySelectorAll(`.${blockName}`);
-      const blockExampleContainer = block.querySelector('.block-content-stucture');
       blockExamples.forEach((example) => {
         const table = document.createElement('table');
         table.innerHTML = `
@@ -84,11 +84,9 @@ export default async function decorate(block) {
         blockExampleContainer.appendChild(table);
       });
     } else {
-      throw new Error(`Error loading block ${blockName}`);
+      throw new Error('failed to fetch block content');
     }
   } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error(e);
-    block.innerHTML = `<p class="error">Error loading block ${blockName}</p>`;
+    blockExampleContainer.innerHTML = '<p>Failed to load block content</p>';
   }
 }
