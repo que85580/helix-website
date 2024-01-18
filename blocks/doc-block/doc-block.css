@@ -33,25 +33,25 @@
   border: 1px dotted var(--color-gray-100);
 }
 
-.doc-block .block-content-stucture .document-content-wrapper > table td :is(p, h1, h2, h3, h4, h5, h6) {
+.doc-block .block-content-stucture .document-content-wrapper :is(p, h1, h2, h3, h4, h5, h6) {
   margin: 0;
   padding: 0;
   margin-bottom: 1em;
   border-bottom: 0;
 }
 
-.doc-block .block-content-stucture .document-content-wrapper > table td a {
+.doc-block .block-content-stucture .document-content-wrapper a {
   color: var(--color-accent-blue);
 }
 
-.doc-block .block-content-stucture .document-content-wrapper > table td [data-align="center"] {
+.doc-block .block-content-stucture .document-content-wrapper [data-align="center"] {
   text-align: center;
 }
 
-.doc-block .block-content-stucture .document-content-wrapper > table td [data-align="right"] {
+.doc-block .block-content-stucture .document-content-wrapper [data-align="right"] {
   text-align: right;
 }
 
-.doc-block .block-content-stucture .document-content-wrapper > table td [data-align="justify"] {
+.doc-block .block-content-stucture .document-content-wrapper [data-align="justify"] {
   text-align: justify;
 }
