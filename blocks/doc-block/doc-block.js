@@ -9,7 +9,7 @@ const blockCollectionInfo = {
 const blockCollectionBaseUrl = `https://${blockCollectionInfo.ref}--${blockCollectionInfo.repo}--${blockCollectionInfo.owner}.hlx.live/block-collection/`;
 const adminApiUrl = `https://admin.hlx.page/status/${blockCollectionInfo.owner}/${blockCollectionInfo.repo}/${blockCollectionInfo.ref}/block-collection/`;
 
-const transformBlockContent = (element) => {
+const transformDocContent = (element) => {
   const clone = element.cloneNode(true);
   clone.querySelectorAll('a').forEach((a) => {
     const href = a.getAttribute('href');
@@ -68,49 +68,71 @@ const getScaffolding = (blockName) => {
   return inner;
 };
 
+const classNameToBlockName = (className) => {
+  const mapped = className
+    .split(' ')
+    .map((cls) => {
+      const words = cls.split('-');
+      return words.map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    });
+
+  return mapped.length > 1 ? `${mapped[0]} (${mapped.slice(1).join(', ')})` : mapped[0];
+};
+
 const fetchContentStucture = async (blockName, contentStructureContainer) => {
   const response = await fetch(`${blockCollectionBaseUrl}${blockName}.plain.html`);
   if (response.ok) {
     const html = await response.text();
     const dp = new DOMParser();
     const doc = dp.parseFromString(html, 'text/html');
-    const blockExamples = doc.querySelectorAll(`.${blockName}`);
+
     const docWrapper = document.createElement('div');
     docWrapper.classList.add('document-wrapper');
     contentStructureContainer.appendChild(docWrapper);
-    blockExamples.forEach((example) => {
-      const table = document.createElement('table');
-      table.innerHTML = `
-          <thead>
-            <tr>
-              <th>${example.className.split(' ').map((cls) => `${cls.charAt(0).toUpperCase()}${cls.substring(1)}`).join(' ')}</th>
-            </tr>
-          </thead>
-          <tbody>
-          </tbody>
-        `;
-      const rows = example.querySelectorAll(':scope > div');
-      let maxcols = 0;
-      rows.forEach((row) => {
-        const tr = document.createElement('tr');
-        const cols = row.querySelectorAll(':scope > div');
-        const numCols = cols.length;
-        if (numCols > maxcols) maxcols = numCols;
-        cols.forEach((col) => {
-          const td = document.createElement('td');
-          td.append(transformBlockContent(col));
-          tr.appendChild(td);
-        });
-        table.querySelector('tbody').appendChild(tr);
-      });
-      table.querySelector('thead > tr > th').setAttribute('colspan', maxcols);
-      table.querySelectorAll('tbody > tr').forEach((tr) => {
-        const tds = tr.querySelectorAll(':scope > td');
-        if (tds.length < maxcols) {
-          tds[0].setAttribute('colspan', maxcols - tds.length + 1);
+
+    const sections = doc.querySelectorAll('body > div');
+    sections.forEach((section, i) => {
+      [...section.children].forEach((child) => {
+        if (child.tagName === 'DIV' && child.className) {
+          const table = document.createElement('table');
+          table.innerHTML = `
+            <thead>
+              <tr>
+                <th>${classNameToBlockName(child.className)}</th>
+              </tr>
+            </thead>
+            <tbody>
+            </tbody>
+          `;
+          const rows = child.querySelectorAll(':scope > div');
+          let maxcols = 0;
+          rows.forEach((row) => {
+            const tr = document.createElement('tr');
+            const cols = row.querySelectorAll(':scope > div');
+            const numCols = cols.length;
+            if (numCols > maxcols) maxcols = numCols;
+            cols.forEach((col) => {
+              const td = document.createElement('td');
+              td.append(transformDocContent(col));
+              tr.appendChild(td);
+            });
+            table.querySelector('tbody').appendChild(tr);
+          });
+          table.querySelector('thead > tr > th').setAttribute('colspan', maxcols);
+          table.querySelectorAll('tbody > tr').forEach((tr) => {
+            const tds = tr.querySelectorAll(':scope > td');
+            if (tds.length < maxcols) {
+              tds[0].setAttribute('colspan', maxcols - tds.length + 1);
+            }
+          });
+          docWrapper.appendChild(table);
+        } else {
+          docWrapper.appendChild(transformDocContent(child));
         }
       });
-      docWrapper.appendChild(table);
+      if (sections.length > (i + 1)) {
+        docWrapper.insertAdjacentHTML('beforeend', '<hr>');
+      }
     });
   } else {
     throw new Error('failed to fetch block content');
