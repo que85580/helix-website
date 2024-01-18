@@ -87,12 +87,21 @@ const fetchContentStucture = async (blockName, contentStructureContainer) => {
     const doc = dp.parseFromString(html, 'text/html');
 
     const docWrapper = document.createElement('div');
-    docWrapper.classList.add('document-wrapper');
+    docWrapper.classList.add('document-viewer');
+
+    const docInner = document.createElement('div');
+    docInner.classList.add('document-inner');
+    docWrapper.appendChild(docInner);
+
     contentStructureContainer.appendChild(docWrapper);
 
     const sections = doc.querySelectorAll('body > div');
     sections.forEach((section, i) => {
       [...section.children].forEach((child) => {
+        const docContentWrapper = document.createElement('div');
+        docContentWrapper.classList.add('document-content-wrapper');
+        docInner.appendChild(docContentWrapper);
+
         if (child.tagName === 'DIV' && child.className) {
           const table = document.createElement('table');
           table.innerHTML = `
@@ -125,13 +134,13 @@ const fetchContentStucture = async (blockName, contentStructureContainer) => {
               tds[0].setAttribute('colspan', maxcols - tds.length + 1);
             }
           });
-          docWrapper.appendChild(table);
+          docContentWrapper.appendChild(table);
         } else {
-          docWrapper.appendChild(transformDocContent(child));
+          docContentWrapper.appendChild(transformDocContent(child));
         }
       });
       if (sections.length > (i + 1)) {
-        docWrapper.insertAdjacentHTML('beforeend', '<hr>');
+        docInner.insertAdjacentHTML('beforeend', '<hr>');
       }
     });
   } else {

@@ -4,49 +4,54 @@
   height: max(600px, 60dvh);
 }
 
-.doc-block .block-content-stucture .document-wrapper {
-  padding: 1rem;
+.doc-block .block-content-stucture .document-viewer {
   background-color: var(--bg-color-grey);
-  font-family: system-ui, sans-serif;
   height: max(600px, 60dvh);
   overflow: clip scroll;
 }
 
-.doc-block .block-content-stucture .document-wrapper table {
+.doc-block .block-content-stucture .document-inner {
+  padding: 1rem;
+  font-family: system-ui, sans-serif;
   background-color: white;
-  max-width: 600px;
+  width: min(800px, 95%);
   margin: 1rem auto;
 }
 
-.doc-block .block-content-stucture .document-wrapper > table th {
+.doc-block .block-content-stucture .document-inner .document-content-wrapper {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.doc-block .block-content-stucture .document-content-wrapper > table th {
   background-color: var(--brand-color-purple);
 }
 
-.doc-block .block-content-stucture .document-wrapper > table td,
-.doc-block .block-content-stucture .document-wrapper > table th {
+.doc-block .block-content-stucture .document-content-wrapper > table td,
+.doc-block .block-content-stucture .document-content-wrapper > table th {
   padding: .5rem;
   border: 1px dotted var(--color-gray-100);
 }
 
-.doc-block .block-content-stucture .document-wrapper > table td :is(p, h1, h2, h3, h4, h5, h6) {
+.doc-block .block-content-stucture .document-content-wrapper > table td :is(p, h1, h2, h3, h4, h5, h6) {
   margin: 0;
   padding: 0;
   margin-bottom: 1em;
   border-bottom: 0;
 }
 
-.doc-block .block-content-stucture .document-wrapper > table td a {
+.doc-block .block-content-stucture .document-content-wrapper > table td a {
   color: var(--color-accent-blue);
 }
 
-.doc-block .block-content-stucture .document-wrapper > table td [data-align="center"] {
+.doc-block .block-content-stucture .document-content-wrapper > table td [data-align="center"] {
   text-align: center;
 }
 
-.doc-block .block-content-stucture .document-wrapper > table td [data-align="right"] {
+.doc-block .block-content-stucture .document-content-wrapper > table td [data-align="right"] {
   text-align: right;
 }
 
-.doc-block .block-content-stucture .document-wrapper > table td [data-align="justify"] {
+.doc-block .block-content-stucture .document-content-wrapper > table td [data-align="justify"] {
   text-align: justify;
 }
