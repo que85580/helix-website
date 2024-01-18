@@ -153,8 +153,10 @@ const fetchContentStucture = async (blockName, contentStructureContainer) => {
     if (json && json.edit && json.edit.status === 200 && json.edit.url) {
       const editUrl = json.edit.url;
       contentStructureContainer.innerHTML += `
+        <p class="button-container">
           <a href="${editUrl}" title="See Document" class="button primary" target="_blank">See Document</a>
-        `;
+        </p>
+      `;
     }
   }
 };
