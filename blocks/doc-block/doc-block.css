@@ -1,5 +1,5 @@
 .doc-block .block-example iframe {
-  border:  1px solid var(--color-gray-100);;
+  border:  1px solid var(--color-gray-100);
   width: 100%; 
   height: max(600px, 60dvh);
 }
