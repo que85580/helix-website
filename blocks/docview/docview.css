@@ -1,0 +1,52 @@
+.docview .document-viewer {
+  background-color: var(--bg-color-grey);
+  height: max(600px, 60dvh);
+  overflow: clip scroll;
+  margin-block-end: 1em;
+}
+
+.docview .document-inner {
+  padding: 1em;
+  font-family: system-ui, sans-serif;
+  background-color: white;
+  width: min(800px, 95%);
+  margin: 1em auto;
+}
+
+.docview .document-inner .document-content-wrapper {
+  max-width: 600px;
+  margin: 1em auto;
+}
+
+.docview .document-content-wrapper > table th {
+  background-color: var(--brand-color-purple);
+}
+
+.docview .document-content-wrapper > table td,
+.docview .document-content-wrapper > table th {
+  padding: .5rem;
+  border: 1px dotted var(--color-gray-100);
+}
+
+.docview .document-content-wrapper :is(p, h1, h2, h3, h4, h5, h6) {
+  margin: 0;
+  padding: 0;
+  margin-bottom: 1em;
+  border-bottom: 0;
+}
+
+.docview .document-content-wrapper a {
+  color: var(--color-accent-blue);
+}
+
+.docview .document-content-wrapper [data-align="center"] {
+  text-align: center;
+}
+
+.docview .document-content-wrapper [data-align="right"] {
+  text-align: right;
+}
+
+.docview .document-content-wrapper [data-align="justify"] {
+  text-align: justify;
+}

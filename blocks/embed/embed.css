@@ -28,7 +28,7 @@
 .embed.scroll .iframe-wrapper {
     position: relative;
     padding-bottom: 0;
-    margin-bottom: 2rem;
+    margin-bottom: 1em;
 }
 
 .embed.scroll iframe {

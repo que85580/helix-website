@@ -1,71 +1,18 @@
-import { addAnchorLink } from '../../scripts/scripts.js';
-import { toClassName } from '../../scripts/lib-franklin.js';
-
-const blockCollectionInfo = {
-  owner: 'adobe',
-  repo: 'helix-block-collection',
-  ref: 'doc-block',
-};
-const blockCollectionBaseUrl = `https://${blockCollectionInfo.ref}--${blockCollectionInfo.repo}--${blockCollectionInfo.owner}.hlx.live/block-collection/`;
-const adminApiUrl = `https://admin.hlx.page/status/${blockCollectionInfo.owner}/${blockCollectionInfo.repo}/${blockCollectionInfo.ref}/block-collection/`;
-
-const transformDocContent = (element) => {
+const transformDocContent = (element, blockCollectionBaseUrl) => {
   const clone = element.cloneNode(true);
-  clone.querySelectorAll('a').forEach((a) => {
-    const href = a.getAttribute('href');
-    if (href.startsWith('/')) {
-      a.setAttribute('href', `${blockCollectionBaseUrl}${href}`);
-    }
-  });
-  clone.querySelectorAll('picture').forEach((pic) => {
-    const img = pic.querySelector('img');
-    const src = img.getAttribute('src');
-    if (src.startsWith('/') || src.startsWith('./')) {
-      img.setAttribute('src', `${blockCollectionBaseUrl}${src}`);
-    }
-    pic.querySelectorAll('source').forEach((source) => {
-      const srcset = source.getAttribute('srcset');
-      if (srcset.startsWith('/') || srcset.startsWith('./')) {
-        source.setAttribute('srcset', `${blockCollectionBaseUrl}${srcset}`);
-      }
+  const resetAttributeBase = (tag, attr) => {
+    clone.querySelectorAll(`${tag}[${attr}^="/"]`).forEach((elem) => {
+      elem[attr] = new URL(elem.getAttribute(attr), blockCollectionBaseUrl).href;
     });
-  });
+    clone.querySelectorAll(`${tag}[${attr}^="./"]`).forEach((elem) => {
+      elem[attr] = new URL(elem.getAttribute(attr), blockCollectionBaseUrl).href;
+    });
+  };
+  resetAttributeBase('a', 'href');
+  resetAttributeBase('img', 'src');
+  resetAttributeBase('source', 'srcset');
+
   return clone;
-};
-
-const getScaffolding = (blockName) => {
-  const inner = document.createElement('div');
-  inner.classList.add('doc-block-inner');
-
-  const example = document.createElement('div');
-  example.classList.add('block-example');
-  example.innerHTML = `
-    <h2 id="${toClassName(`${blockName}-block-example`)}">Example</h2>  
-    <iframe 
-      src="${blockCollectionBaseUrl}${blockName}"
-      title="${blockName}"
-      class="block-example"
-      allowfullscreen=""
-      allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-      loading="lazy">
-    </iframe>
-    <p class="button-container">
-      <a href="${blockCollectionBaseUrl}${blockName}" title="See Live Example" class="button primary" target="_blank">See Live Example</a>
-    </p>
-  `;
-  inner.appendChild(example);
-
-  const contentStructure = document.createElement('div');
-  contentStructure.classList.add('block-content-stucture');
-  contentStructure.innerHTML = `
-    <h2 id="${toClassName(`${blockName}-block-content-structure`)}">Content Structure</h2>
-    <div class="block-content-stucture-display"></div>
-  `;
-  inner.appendChild(contentStructure);
-
-  inner.querySelectorAll('h2').forEach((h2) => addAnchorLink(h2));
-
-  return inner;
 };
 
 const classNameToBlockName = (className) => {
@@ -79,8 +26,9 @@ const classNameToBlockName = (className) => {
   return mapped.length > 1 ? `${mapped[0]} (${mapped.slice(1).join(', ')})` : mapped[0];
 };
 
-const fetchContentStucture = async (blockName, contentStructureContainer) => {
-  const response = await fetch(`${blockCollectionBaseUrl}${blockName}.plain.html`);
+const fetchContentStucture = async (href) => {
+  const { origin } = new URL(href);
+  const response = await fetch(`${href}.plain.html`);
   if (response.ok) {
     const html = await response.text();
     const dp = new DOMParser();
@@ -93,6 +41,7 @@ const fetchContentStucture = async (blockName, contentStructureContainer) => {
     docInner.classList.add('document-inner');
     docWrapper.appendChild(docInner);
 
+    const contentStructureContainer = document.createElement('div');
     contentStructureContainer.appendChild(docWrapper);
 
     const sections = doc.querySelectorAll('body > div');
@@ -122,7 +71,7 @@ const fetchContentStucture = async (blockName, contentStructureContainer) => {
             if (numCols > maxcols) maxcols = numCols;
             cols.forEach((col) => {
               const td = document.createElement('td');
-              td.append(transformDocContent(col));
+              td.append(transformDocContent(col, origin));
               tr.appendChild(td);
             });
             table.querySelector('tbody').appendChild(tr);
@@ -136,41 +85,40 @@ const fetchContentStucture = async (blockName, contentStructureContainer) => {
           });
           docContentWrapper.appendChild(table);
         } else {
-          docContentWrapper.appendChild(transformDocContent(child));
+          docContentWrapper.appendChild(transformDocContent(child, origin));
         }
       });
       if (sections.length > (i + 1)) {
         docInner.insertAdjacentHTML('beforeend', '<hr>');
       }
     });
-  } else {
-    throw new Error('failed to fetch block content');
+
+    return contentStructureContainer;
   }
 
-  const adminApiResp = await fetch(`${adminApiUrl}${blockName}?editUrl=auto`);
-  if (adminApiResp.ok) {
-    const json = await adminApiResp.json();
-    if (json && json.edit && json.edit.status === 200 && json.edit.url) {
-      const editUrl = json.edit.url;
-      contentStructureContainer.innerHTML += `
-        <p class="button-container">
-          <a href="${editUrl}" title="See Document" class="button primary" target="_blank">See Document</a>
-        </p>
-      `;
-    }
-  }
+  throw new Error('failed to fetch block content');
 };
 
+/**
+ * decorect the docivew
+ * @param {Element} block the block element
+ */
 export default async function decorate(block) {
-  // block name provided as block content or from url slug
-  const blockName = block.textContent.trim() || window.location.pathname.split('/').pop();
-  const scaffolding = getScaffolding(blockName);
-  block.replaceChildren(scaffolding);
-  const contentStructureDisplay = block.querySelector('.block-content-stucture-display');
-
-  try {
-    fetchContentStucture(blockName, contentStructureDisplay);
-  } catch (e) {
-    contentStructureDisplay.innerHTML = '<p>Failed to load block content</p>';
+  const a = block.querySelector('a');
+  let { href } = a;
+  const { hostname } = new URL(href);
+  if (hostname === window.location.hostname && a.textContent.startsWith('https://')) {
+    href = a.textContent;
   }
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        fetchContentStucture(href).then((docView) => {
+          block.replaceChildren(docView);
+        });
+        observer.disconnect();
+      }
+    });
+  });
+  observer.observe(block);
 }
