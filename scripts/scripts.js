@@ -425,7 +425,7 @@ function addBlockLevelInViewAnimation(main) {
 }
 
 function decorateBreadcrumb(main) {
-  if (!document.body.classList.contains('guides-template')) {
+  if (!document.body.classList.contains('guides-template') && !document.body.classList.contains('blog-template')) {
     return;
   }
 
@@ -448,6 +448,7 @@ function decorateBreadcrumb(main) {
   main.prepend(wrapper);
 
   const isDocumentationLanding = window.location.pathname === '/docs/';
+  const blogTemplate = document.body.classList.contains('blog-template');
 
   const list = createTag('ul');
   const home = createTag('li', {}, '<a href="/home" class="breadcrumb-link-underline-effect">Home</a>');
@@ -458,6 +459,7 @@ function decorateBreadcrumb(main) {
 
   const category = getMetadata('category');
   const title = getMetadata('og:title');
+  const template = getMetadata('template');
 
   if (category) {
     const section = createTag(
@@ -468,17 +470,28 @@ function decorateBreadcrumb(main) {
     list.append(section);
   }
 
+  if (template) {
+    const section = createTag(
+      'li',
+      {},
+      `<a href="/docs/#${template.toLowerCase()}" class="breadcrumb-link-underline-effect category">${template}</a>`,
+    );
+    list.append(section);
+  }
+
   if (!isDocumentationLanding) {
     const article = createTag('li', {}, `<a href="${window.location.pathname}">${title}</a>`);
     list.append(article);
 
-    const backBtn = createTag('div', { class: 'guides-back-btn desktop' }, `
-        <span class="icon icon-icon-arrow"></span>
-        <a href="/docs/" class="link-underline-effect">
-            Back
-        </a>
-    `);
-    document.querySelector('.default-content-wrapper').prepend(backBtn);
+    if (!blogTemplate) {
+      const backBtn = createTag('div', { class: 'guides-back-btn desktop' }, `
+          <span class="icon icon-icon-arrow"></span>
+          <a href="/docs/" class="link-underline-effect">
+              Back
+          </a>
+      `);
+      document.querySelector('.default-content-wrapper').prepend(backBtn);
+    }
   }
 
   // make the last item to be unclickable as already on the page
@@ -533,6 +546,21 @@ function decorateSVGs(main) {
   });
 }
 
+function buildAuthorBox(main) {
+  const div = document.createElement('div');
+  const author = getMetadata('author');
+  const publicationDate = getMetadata('publication-date');
+  const authorImage = getMetadata('author-image');
+
+  const authorBoxBlockEl = buildBlock('author-box', [
+    [`<img src="${authorImage}" alt="${author}" title="${author}">`,
+      `<p>${author}</p>
+      <p>${publicationDate}</p>`],
+  ]);
+  div.append(authorBoxBlockEl);
+  main.append(div);
+}
+
 // --------------- Main functions here ---------------- //
 
 /**
@@ -541,6 +569,9 @@ function decorateSVGs(main) {
  */
 export function buildAutoBlocks(main) {
   try {
+    if (getMetadata('author') && !main.querySelector('.author-box')) {
+      buildAuthorBox(main);
+    }
     buildEmbeds(main);
   } catch (error) {
     // eslint-disable-next-line no-console
@@ -592,6 +623,20 @@ async function loadEager(doc) {
     }
   }
 
+  // deprecation banner
+  const deprecation = getMetadata('deprecation');
+  if (deprecation) {
+    const deprecationBanner = buildBlock('deprecation', deprecation);
+    const h1 = document.querySelector('h1');
+    if (h1) {
+      // insert above title
+      h1.parentElement.insertBefore(deprecationBanner, h1);
+    } else {
+      // insert at top of page
+      document.querySelector('main > div').append(deprecationBanner);
+    }
+  }
+
   const main = doc.querySelector('main');
   if (main) {
     decorateMain(main);
@@ -602,71 +647,10 @@ async function loadEager(doc) {
   }
 }
 
-function setUpSoftNavigation() {
-  const navigate = async (href, link) => {
-    try {
-      const resp = await fetch(href);
-      const html = await resp.text();
-      const dom = new DOMParser().parseFromString(html, 'text/html');
-      const main = dom.querySelector('main');
-      const template = dom.querySelector('meta[name="template"]');
-      if (template && template.getAttribute('content') === 'guides') {
-        await decorateMain(main);
-        await loadBlocks(main);
-        const currentMain = document.querySelector('main');
-        const children = [...currentMain.children].slice(2);
-        sampleRUM('leave');
-        children.forEach((child) => child.remove());
-        while (main.firstElementChild) currentMain.append(main.firstElementChild);
-        const title = dom.querySelector('title').textContent;
-        const category = dom.querySelector('meta[name="category"').getAttribute('content');
-        document.querySelector('meta[name="category"]').setAttribute('content', category);
-        document.querySelector('meta[property="og:title"]').setAttribute('content', title);
-        document.querySelector('title').textContent = title;
-        decorateBreadcrumb(currentMain);
-        const oldhref = window.location.pathname;
-        sampleRUM('enter', { source: 'softnav', target: oldhref });
-        sampleRUM.observe(currentMain.querySelectorAll('div[data-block-name]'));
-        sampleRUM.observe(currentMain.querySelectorAll('picture > img'));
-
-        link.closest('div > ul').querySelector('a.active').classList.remove('active');
-        link.classList.add('active');
-      } else {
-        window.location.href = href;
-      }
-    } catch {
-      window.location.href = href;
-    }
-  };
-
-  window.addEventListener('popstate', async (e) => {
-    const { href, pathname } = window.location;
-    const link = document.body.querySelector(`.side-navigation a[href="${pathname}"]`);
-    if (link && getMetadata('template') === 'guides') {
-      e.preventDefault();
-      await navigate(href, link);
-    }
-  });
-
-  document.body.addEventListener('click', async (e) => {
-    const link = e.target.closest('a');
-    if (link && getMetadata('template') === 'guides' && e.target.closest('.side-navigation')) {
-      const { href } = link;
-      const hrefURL = new URL(href);
-      if ((hrefURL.origin === window.location.origin) && window.location.pathname !== '/docs/') {
-        e.preventDefault();
-        await navigate(href, link);
-        window.history.pushState({}, null, href);
-      }
-    }
-  });
-}
-
 /**
  * loads everything that doesn't need to be delayed.
  */
 async function loadLazy(doc) {
-  setUpSoftNavigation();
   const main = doc.querySelector('main');
 
   // NOTE:'.redesign' class is needed for the redesign styles, keep this
@@ -697,7 +681,8 @@ async function loadLazy(doc) {
     // breadcrumb setup
     // loadBreadcrumb(main);
     // sidebar + related style setup
-    setUpSideNav(main, main.querySelector('aside'));
+    const aside = main.querySelector('main > aside');
+    if (aside) setUpSideNav(main, aside);
     decorateGuideTemplateCodeBlock();
   }
 
